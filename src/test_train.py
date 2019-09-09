@@ -1,11 +1,59 @@
 import tensorflow as tf
-from network import PNet
+from mtcnn_models import PNet
 from trainer import Trainer
 import numpy as np
 
+
+
+
+def parser(record):
+    image_feature_description = {
+        'image/raw': tf.FixedLenFeature([], tf.string),
+        'image/height': tf.FixedLenFeature([], tf.int64),
+        'image/width': tf.FixedLenFeature([], tf.int64),
+        'image/channels': tf.FixedLenFeature([], tf.int64),
+        'image/object/bbox/label':tf.FixedLenFeature([], tf.int64),
+        'image/object/bbox/xmin':tf.FixedLenFeature([], tf.float32),
+        'image/object/bbox/xmax':tf.FixedLenFeature([], tf.float32),
+        'image/object/bbox/ymin':tf.FixedLenFeature([], tf.float32),
+        'image/object/bbox/ymax':tf.FixedLenFeature([], tf.float32)
+    }
+    image_feature = tf.parse_single_example(record, image_feature_description)
+
+
+    # Perform additional preprocessing on the parsed data.
+    height = image_feature['image/height']
+    width = image_feature['image/width']
+    channels = image_feature['image/channels']
+    image = tf.decode_raw(image_feature['image/raw'], tf.uint8)
+    image = tf.reshape(image, [height, width, channels])
+    image = (tf.cast(image, tf.float32)-127.5) / 128
+    label = (tf.cast(image_feature['image/object/bbox/label'], tf.float32))
+    label = tf.reshape(label, [1])
+    xmin = image_feature['image/object/bbox/xmin']
+    xmax = image_feature['image/object/bbox/xmax']
+    ymin = image_feature['image/object/bbox/ymin']
+    ymax = image_feature['image/object/bbox/ymax']
+    roi = [xmin, ymin, xmax, ymax]
+    return image, label, roi
+
+
+
 pnet = PNet(alpha_class=1, beta_reg=0.5, class_th=0.5)
+
+
+n_epoch = 1
+batch_size = 32
+
+filenames = ["/home/axel/Documents/MTCNN/data/12/tf_ann.tfrecords"]
+dataset = tf.data.TFRecordDataset(filenames)
+dataset = dataset.map(parser)
+dataset = dataset.shuffle(buffer_size=10000)
+dataset = dataset.batch(32)
+dataset = dataset.repeat(n_epoch)
+
 optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=1e-4)
-trainer = Trainer(net=pnet, dataset=None, optimizer=optimizer)
+trainer = Trainer(net=pnet, dataset=dataset, optimizer=optimizer)
 trainer.train()
 """
 batch_size = 32

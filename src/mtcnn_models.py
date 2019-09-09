@@ -57,6 +57,21 @@ class PNet(Network):
 
         return face_loss, bbox_loss
 
+    def compute_accuracy(self, target, pred):
+        pred = tf.squeeze(pred, [1, 2], name='cls_prob')
+
+        filtered_face = filter_negative_samples(labels=target, tensors=[target, pred])
+
+        ones = tf.ones_like(filtered_face[1], dtype=tf.int32)
+
+        mask = tf.math.greater(filtered_face[1], self.class_th)
+
+        y_pred_met = tf.multiply(ones, tf.cast(mask, dtype=tf.int32))
+            
+        cls_accuracy = tf.metrics.accuracy(labels=tf.cast(filtered_face[0], dtype=tf.int32), predictions=y_pred_met)
+
+        return cls_accuracy
+
     def get_input(self):
         return tf.compat.v1.placeholder(tf.float32, shape=(None, 12, 12, 3))
     

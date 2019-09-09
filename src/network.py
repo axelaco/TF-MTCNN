@@ -23,7 +23,10 @@ class Network(ABC):
     @abstractmethod
     def compute_loss(self, target_class, target_reg, pred_class, pred_reg):
         pass
-    
+
+    @abstractmethod
+    def compute_accuracy(self, target, pred):
+        pass    
     @abstractmethod
     def forward(self, input, trainable=True):
         pass
