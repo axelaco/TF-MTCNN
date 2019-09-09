@@ -14,6 +14,13 @@ offset_center_percentage = 0.2
 WIDER_FACE_FOLDER = '/home/axel/Documents/MTCNN/WIDER_train/images'
 DATA_GENERATED_FOLDER = '/home/axel/Documents/MTCNN/data/'
 
+
+pos_idx = 0
+part_idx = 0
+neg_idx = 0
+
+
+
 def parse_annotation_file(ann_file):
     ann_res = dict()
     with open(ann_file, 'r') as f:
@@ -41,9 +48,7 @@ def parse_annotation_file(ann_file):
 
     return ann_res        
 
-def generate_bbox_image(img, gt_bboxes, pos_img_folder, part_img_folder, net_size=12, num_pos=20):
-    pos_idx = 0
-    part_idx = 0
+def generate_bbox_image(img, gt_bboxes, pos_img_folder, part_img_folder, pos_idx, part_idx, net_size=12, num_pos=20):
     width, height, channels = img.shape
     for box in gt_bboxes:
         x, y, w, h = box
@@ -73,7 +78,7 @@ def generate_bbox_image(img, gt_bboxes, pos_img_folder, part_img_folder, net_siz
             nx2 = nx1 + new_bbox_size
             ny2 = ny1 + new_bbox_size
 
-            if nx2 > width or ny2 > height:
+            if nx2 > width or ny2 > height or nx2 < 0 or ny2 < 0:
                     continue
 
             crop_box = np.array([nx1, ny1, new_bbox_size, new_bbox_size])
@@ -85,14 +90,16 @@ def generate_bbox_image(img, gt_bboxes, pos_img_folder, part_img_folder, net_siz
             offset_y2 = (y + h - ny2) / float(new_bbox_size)
 
             cropped_img = img[ny1:ny2, nx1:nx2, :]
+
+            if cropped_img.shape[0] == 0 or cropped_img.shape[1] == 0:
+                continue
+
             
             resized_img = cv.resize(cropped_img, (net_size, net_size), interpolation=cv.INTER_LINEAR)
             
-            filename = 'toto'
-            
             if np.max(multiple_IOU(crop_box, gt_bboxes)) >= 0.65:
-                img_path = pos_img_folder + '/{}.img'.format(filename)
-                #cv.imwrite(img_path, resized_img)
+                img_path = pos_img_folder + '/{}.jpg'.format(pos_idx)
+                cv.imwrite(img_path, resized_img)
                 
                 ann_str = '{img_path} {label} {x1} {y1} {x2} {y2}\n' 
                 
@@ -101,8 +108,8 @@ def generate_bbox_image(img, gt_bboxes, pos_img_folder, part_img_folder, net_siz
 
                 pos_idx += 1
             elif np.max(multiple_IOU(crop_box, gt_bboxes)) >= 0.4:
-                img_path = part_img_folder + '/{}.img'.format(filename)
-                #cv.imwrite(img_path, resized_img)
+                img_path = part_img_folder + '/{}.jpg'.format(part_idx)
+                cv.imwrite(img_path, resized_img)
                 
                 ann_str = '{img_path} {label} {x1} {y1} {x2} {y2}\n' 
                 with open(os.path.join(DATA_GENERATED_FOLDER, str(net_size)) + '/' + 'annotation_file.txt', 'a+') as f:
@@ -110,46 +117,52 @@ def generate_bbox_image(img, gt_bboxes, pos_img_folder, part_img_folder, net_siz
 
                 
                 part_idx += 1
-
     return pos_idx, part_idx
 
-def generate_neg_image(img, gt_bboxes, neg_img_folder, net_size=12, num_neg=20):
+def generate_neg_image(img, gt_bboxes, neg_img_folder, neg_idx, net_size=12, num_neg=20):
     width, height, channels = img.shape
-    
-    for i in range(num_neg):
-        new_bbox_size = npr.randint(40, int((width * height) / 2))
+    num = 0
+    while num < num_neg:
+        new_bbox_size = npr.randint(12, 40)
         nx1 = npr.randint(0, width - new_bbox_size)  # Note: randint() is from uniform distribution.
         ny1 = npr.randint(0, height - new_bbox_size)
 
         nx2 = nx1 + new_bbox_size
         ny2 = ny1 + new_bbox_size
-
+        
         if nx2 > width or ny2 > height:
             continue
         
         crop_box = np.array([nx1, ny1, new_bbox_size, new_bbox_size])
 
-
         cropped_img = img[ny1:ny2, nx1:nx2, :]
-            
-        resized_img = cv.resize(cropped_img, (net_size, net_size), interpolation=cv.INTER_LINEAR)    
-         
+
+        if cropped_img.shape[0] == 0 or cropped_img.shape[1] == 0:
+            continue
+
+        resized_img = cv.resize(cropped_img, (12, 12), interpolation=cv.INTER_LINEAR)    
+
+
         if np.max(multiple_IOU(crop_box, gt_bboxes)) <= 0.3:
-            img_path = neg_img_folder + '/{}.img'.format(filename)
-            #cv.imwrite(img_path, resized_img)
-                
+            img_path = neg_img_folder + '/{}.jpg'.format(neg_idx)
+            cv.imwrite(img_path, cropped_img)    
             ann_str = '{img_path} {label}\n' 
-            with open(os.path.join(DATA_GENERATED_FOLDER, str(net_size)) + '/' + 'annotation_file.txt', 'a+') as f:
+            with open(os.path.join(DATA_GENERATED_FOLDER, str(12)) + '/' + 'annotation_file.txt', 'a+') as f:
                 f.write(ann_str.format(img_path=img_path, label=0))
 
-
+            num += 1
+            neg_idx += 1
+        
+    return neg_idx
 
 
 if __name__ == '__main__':
     args = sys.argv[1:]
 
     net_size = 12
-
+    print('# of positive sample: ', pos_idx)
+    print('# of part sample: ', part_idx)
+    print('# of negative sample: ', neg_idx)
     if not os.path.exists(DATA_GENERATED_FOLDER):
         os.makedirs(DATA_GENERATED_FOLDER)
 
@@ -159,26 +172,21 @@ if __name__ == '__main__':
         os.makedirs(pos_img_folder)
 
     part_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'img_part')
-    if not os.path.exists(pos_img_folder):
-        os.makedirs(pos_img_folder)
+    if not os.path.exists(part_img_folder):
+        os.makedirs(part_img_folder)
 
     neg_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'img_neg')
-    if not os.path.exists(pos_img_folder):
+    if not os.path.exists(neg_img_folder):
         os.makedirs(neg_img_folder)
 
     ann_res = parse_annotation_file(args[0])
-    pos_idx = 0
-    partial_idx = 0
 
     for key, value in tqdm.tqdm(ann_res.items()):
         img = cv.imread(key)
-        p_idx, part_idx = generate_neg_image(img, value, neg_img_folder)
-        pos_idx += p_idx
-        partial_idx += part_idx
-        break
+        neg_idx = generate_neg_image(img, value, neg_img_folder, neg_idx)
+        pos_idx, part_idx = generate_bbox_image(img, value, pos_img_folder, part_img_folder, pos_idx=pos_idx, part_idx=part_idx)
+    print("pos={}, part={}, neg={}".format(pos_idx, part_idx, neg_idx))
 
-    print('# of positive sample: ', pos_idx)
-    print('# of part sample: ', partial_idx)
     
     """
     min_size_percentage = 0.8
