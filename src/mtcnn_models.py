@@ -8,38 +8,21 @@ class PNet(Network):
         super().__init__(alpha_class, beta_reg, class_th)
 
         self.conv1 = tf.keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=1)
-
         self.conv2 = tf.keras.layers.Conv2D(filters=16, kernel_size=(3,3), strides=1)
-
         self.conv3 = tf.keras.layers.Conv2D(filters=32, kernel_size=(3,3), strides=1)
-
         self.conv4_1 = tf.keras.layers.Conv2D(filters=1, kernel_size=1, strides=1)
-
         self.conv4_2 = tf.keras.layers.Conv2D(filters=4, kernel_size=(1, 1), strides=1)
 
     def forward(self, input, trainable=True):
         x = self.conv1(input)
         x = tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2, padding='SAME')(x)
         x = tf.keras.layers.PReLU()(x)
-        
-        print(x.get_shape())
         x = self.conv2(x)
         x = tf.keras.layers.PReLU()(x)
-
-        print(x.get_shape())
-        
         x = self.conv3(x)
         x = tf.keras.layers.PReLU()(x)
-
-        print(x.get_shape())        
         y_face_pred = tf.keras.activations.sigmoid(self.conv4_1(x))
-
         y_bbox_pred = self.conv4_2(x)
-
-        print(y_bbox_pred.get_shape())
-        print(y_face_pred.get_shape())
-
-
         return y_face_pred, y_bbox_pred
     
 

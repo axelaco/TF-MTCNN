@@ -43,14 +43,17 @@ pnet = PNet(alpha_class=1, beta_reg=0.5, class_th=0.5)
 
 
 n_epoch = 1
-batch_size = 32
+batch_size = 128
 
 filenames = ["/home/axel/Documents/MTCNN/data/12/tf_ann.tfrecords"]
+files = tf.data.Dataset.list_files("//home/axel/Documents/MTCNN/data/12/tf_ann*.tfrecord")
 dataset = tf.data.TFRecordDataset(filenames)
-dataset = dataset.map(parser)
-dataset = dataset.shuffle(buffer_size=10000)
-dataset = dataset.batch(32)
 dataset = dataset.repeat(n_epoch)
+dataset = dataset.shuffle(buffer_size=10000)
+dataset = dataset.apply(tf.contrib.data.map_and_batch(
+    map_func=parser, batch_size=batch_size))
+
+
 
 optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=1e-4)
 trainer = Trainer(net=pnet, dataset=dataset, optimizer=optimizer)
