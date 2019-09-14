@@ -54,8 +54,8 @@ def _add_to_tf_record(file_annotation_path, tf_record_file, net_size):
 
 if __name__ == '__main__':
     args = sys.argv[1:]
-    tf_record_file = DATA_GENERATED_FOLDER + args[0] + '/tf_ann.tfrecords'
-    file_ann = DATA_GENERATED_FOLDER + args[0] + '/annotation_file.txt'
+    tf_record_file = DATA_GENERATED_FOLDER + args[0] + '/tf_ann_val.tfrecords'
+    file_ann = DATA_GENERATED_FOLDER + args[0] + '/val_annotation_file.txt'
     _add_to_tf_record(file_ann, tf_record_file, int(args[0]))
 
         

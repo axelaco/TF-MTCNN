@@ -11,7 +11,7 @@ min_size_percentage = 0.7
 max_size_percentage = 1.1
 offset_center_percentage = 0.2
 
-WIDER_FACE_FOLDER = '/home/axel/Documents/MTCNN/WIDER_train/images'
+WIDER_FACE_FOLDER = '/home/axel/Documents/MTCNN/WIDER_val/images'
 DATA_GENERATED_FOLDER = '/home/axel/Documents/MTCNN/data/'
 
 
@@ -48,7 +48,7 @@ def parse_annotation_file(ann_file):
 
     return ann_res        
 
-def generate_bbox_image(img, gt_bboxes, pos_img_folder, part_img_folder, pos_idx, part_idx, net_size=12, num_pos=20):
+def generate_bbox_image(img, gt_bboxes, pos_img_folder, part_img_folder, pos_idx, part_idx, net_size=12, num_pos=10):
     width, height, channels = img.shape
     for box in gt_bboxes:
         x, y, w, h = box
@@ -103,7 +103,7 @@ def generate_bbox_image(img, gt_bboxes, pos_img_folder, part_img_folder, pos_idx
                 
                 ann_str = '{img_path} {label} {x1} {y1} {x2} {y2}\n' 
                 
-                with open(os.path.join(DATA_GENERATED_FOLDER, str(net_size)) + '/' + 'annotation_file.txt', 'a+') as f:
+                with open(os.path.join(DATA_GENERATED_FOLDER, str(net_size)) + '/' + 'val_annotation_file.txt', 'a+') as f:
                     f.write(ann_str.format(img_path=img_path, label=1, x1=offset_x1, y1=offset_y1, x2=offset_x2, y2=offset_y2))
 
                 pos_idx += 1
@@ -112,7 +112,7 @@ def generate_bbox_image(img, gt_bboxes, pos_img_folder, part_img_folder, pos_idx
                 cv.imwrite(img_path, resized_img)
                 
                 ann_str = '{img_path} {label} {x1} {y1} {x2} {y2}\n' 
-                with open(os.path.join(DATA_GENERATED_FOLDER, str(net_size)) + '/' + 'annotation_file.txt', 'a+') as f:
+                with open(os.path.join(DATA_GENERATED_FOLDER, str(net_size)) + '/' + 'val_annotation_file.txt', 'a+') as f:
                     f.write(ann_str.format(img_path=img_path, label=-1, x1=offset_x1, y1=offset_y1, x2=offset_x2, y2=offset_y2))
 
                 
@@ -147,7 +147,7 @@ def generate_neg_image(img, gt_bboxes, neg_img_folder, neg_idx, net_size=12, num
             img_path = neg_img_folder + '/{}.jpg'.format(neg_idx)
             cv.imwrite(img_path, cropped_img)    
             ann_str = '{img_path} {label}\n' 
-            with open(os.path.join(DATA_GENERATED_FOLDER, str(12)) + '/' + 'annotation_file.txt', 'a+') as f:
+            with open(os.path.join(DATA_GENERATED_FOLDER, str(12)) + '/' + 'val_annotation_file.txt', 'a+') as f:
                 f.write(ann_str.format(img_path=img_path, label=0))
 
             num += 1
@@ -167,15 +167,15 @@ if __name__ == '__main__':
         os.makedirs(DATA_GENERATED_FOLDER)
 
 
-    pos_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'img_pos')
+    pos_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'validation', 'img_pos')
     if not os.path.exists(pos_img_folder):
         os.makedirs(pos_img_folder)
 
-    part_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'img_part')
+    part_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'validation', 'img_part')
     if not os.path.exists(part_img_folder):
         os.makedirs(part_img_folder)
 
-    neg_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'img_neg')
+    neg_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'validation', 'img_neg')
     if not os.path.exists(neg_img_folder):
         os.makedirs(neg_img_folder)
 
