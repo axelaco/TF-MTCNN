@@ -34,7 +34,10 @@ class MTCNNNetwork(tf.keras.Model):
             pred = tf.squeeze(pred, [1, 2], name='cls_prob')
         
         filtered_face = filter_negative_samples(labels=target, tensors=[target, pred])
+
+
         ones = tf.ones_like(filtered_face[1], dtype=tf.int32)
+        
         mask = tf.math.greater(filtered_face[1], 0.5)
         mask = tf.cast(mask, dtype=tf.int32)
         y_pred_met = tf.multiply(ones, tf.cast(mask, dtype=tf.int32))

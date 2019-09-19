@@ -53,7 +53,7 @@ class Trainer(object):
             cls_pred, bbox_pred = self.net(inputs, training=True)
             face_loss, bbox_loss = self.net.compute_loss(labels, rois, cls_pred, bbox_pred)
             acc = self.net.compute_accuracy(labels, cls_pred)
-           
+            
         self.val_loss_metric.update_state(face_loss)
         self.val_bbox_loss_metric.update_state(bbox_loss)
         self.val_cls_accuracy.update_state(acc)
@@ -100,10 +100,11 @@ class Trainer(object):
             
             for inputs, label, roi in tqdm.tqdm(self.dataset):
                 self.train_step(inputs, label, roi)
-
+            """
             for inputs, label, roi in tqdm.tqdm(self.val_dataset):
                 self.val_step(inputs, label, roi)
-
+                break
+            """
             self.save_model()
 
             self.log_metrics(epoch)

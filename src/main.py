@@ -1,6 +1,6 @@
 import tensorflow as tf
 tf.enable_eager_execution()
-from mtcnn_arch import PNet
+from mtcnn_arch import PNet, RNet
 from dataset import MTCNNDataset
 from trainer import Trainer
 import numpy as np
@@ -29,7 +29,7 @@ def parse_arguments(argv):
 
 
 def main(args):
-    network_model = {'PNET': PNet}
+    network_model = {'PNET': PNet, 'RNET': RNet}
 
 
     net = network_model[args.net_model]()
@@ -42,7 +42,7 @@ def main(args):
 
 
     trainer = Trainer(net=net, train_dataset=dataset.get_training_set(batch_size=args.batch_size), 
-        val_dataset=dataset.get_validation_set(batch_size=args.batch_size), optimizer=optimizer)
+        val_dataset=None, optimizer=optimizer)#dataset.get_validation_set(batch_size=args.batch_size), optimizer=optimizer)
     trainer.train(n_epoch=args.n_epoch)
 
 if __name__ == '__main__':
