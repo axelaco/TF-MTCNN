@@ -11,7 +11,7 @@ min_size_percentage = 0.7
 max_size_percentage = 1.1
 offset_center_percentage = 0.2
 
-WIDER_FACE_FOLDER = '/home/axel/Documents/MTCNN/WIDER_train/images'
+WIDER_FACE_FOLDER = '/home/axel/Documents/MTCNN/WIDER_val/images'
 DATA_GENERATED_FOLDER = '/home/axel/Documents/MTCNN/data/'
 
 
@@ -26,7 +26,9 @@ def parse_annotation_file(ann_file, pos_img_folder, part_img_folder, neg_img_fol
     neg_idx = 0
 
     pbar = tqdm.tqdm(total=int(len(lines)))
-
+    
+    f = open(os.path.join(DATA_GENERATED_FOLDER, str(net_size)) + '/' + 'val_annotation_file.txt', 'a+')
+           
     while(True):    
         if idx >= len(lines):
             break
@@ -44,13 +46,13 @@ def parse_annotation_file(ann_file, pos_img_folder, part_img_folder, neg_img_fol
                 idx += 1
             bboxes = np.array(bboxes)
             img = cv.imread(img_file)
-            f = open(os.path.join(DATA_GENERATED_FOLDER, str(net_size)) + '/' + 'annotation_file.txt', 'a+')
             neg_idx = generate_neg_image(img=img, gt_bboxes=bboxes, neg_img_folder=neg_img_folder, neg_idx=neg_idx, net_size=24, f=f)
             pos_idx, part_idx = generate_bbox_image(img=img, gt_bboxes=bboxes, pos_img_folder=pos_img_folder, part_img_folder=part_img_folder, pos_idx=pos_idx, part_idx=part_idx, f=f)
             pbar.update(int(bbox_gt))
         else:
             pbar.update(2)
             idx += 2
+    f.close()
     print("pos={}, part={}, neg={}".format(pos_idx, part_idx, neg_idx))
 
 def generate_bbox_image(img, gt_bboxes, pos_img_folder, part_img_folder, pos_idx, part_idx, net_size=12, num_pos=20, f=None):
@@ -165,15 +167,15 @@ if __name__ == '__main__':
         os.makedirs(DATA_GENERATED_FOLDER)
 
 
-    pos_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'img_pos')
+    pos_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'validation', 'img_pos')
     if not os.path.exists(pos_img_folder):
         os.makedirs(pos_img_folder)
 
-    part_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'img_part')
+    part_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'validation', 'img_part')
     if not os.path.exists(part_img_folder):
         os.makedirs(part_img_folder)
 
-    neg_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'img_neg')
+    neg_img_folder = os.path.join(DATA_GENERATED_FOLDER, str(net_size), 'validation', 'img_neg')
     if not os.path.exists(neg_img_folder):
         os.makedirs(neg_img_folder)
 

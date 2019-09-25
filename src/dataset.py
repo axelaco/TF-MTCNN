@@ -32,7 +32,7 @@ class MTCNNDataset(object):
         image = tf.decode_raw(image_feature['image/raw'], tf.uint8)
         image = tf.reshape(image, [height, width, channels])
         image = (tf.cast(image, tf.float32)-127.5) / 128
-        label = (tf.cast(image_feature['image/object/bbox/label'], tf.float32))
+        label = tf.cast(image_feature['image/object/bbox/label'], tf.float32)
         label = tf.reshape(label, [1])
         xmin = image_feature['image/object/bbox/xmin']
         xmax = image_feature['image/object/bbox/xmax']

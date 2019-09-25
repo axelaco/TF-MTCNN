@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 def filter_negative_samples(labels, tensors):
-    keeps_indices = tf.where(tf.math.greater_equal(labels, 0))
+    keeps_indices = tf.where(tf.math.less(labels, 2))
     keeps_indices = keeps_indices[:,0]
     
     filtered = []

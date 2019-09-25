@@ -1,7 +1,46 @@
 import tensorflow as tf
+tf.enable_eager_execution()
 import numpy as np
 import tqdm
 import datetime
+
+def count_nb(X, val):
+    return tf.reduce_sum(tf.cast(tf.equal(X, val), tf.int32))
+
+def filter_element(val, idx_max, label, tensors):
+    keeps_indices = tf.where(tf.math.equal(label, val))
+    keeps_indices = keeps_indices[:idx_max, 0]
+    filtered = []
+    for t in tensors:
+        with tf.control_dependencies([tf.compat.v1.debugging.assert_equal(tf.shape(t)[0], tf.shape(label)[0])]):
+            f = tf.gather(t, keeps_indices)
+            filtered.append(f)
+    return filtered
+
+def rebalance_batch(x, label, roi):
+        pos = count_nb(label, 1)
+
+        x_neg, label_neg, roi_neg = filter_element(0, pos * 2, label, [x, label, roi])
+
+        x_part, label_part, roi_part  = filter_element(2, pos, label, [x, label, roi])
+
+        x_pos, label_pos, roi_pos = filter_element(1, pos, label, [x, label, roi])
+
+        part = count_nb(label, 2)
+        
+        if part < pos:
+            return None, None, None
+
+        indexes = tf.range(0, 4 * pos + 1)
+    
+        indexes = tf.random.shuffle(indexes)
+    
+        x_final = tf.gather(tf.concat([x_neg, x_part, x_pos], axis=0), indexes)
+        label_final = tf.gather(tf.concat([label_neg, label_part, label_pos], axis=0), indexes)
+        roi_final = tf.gather(tf.concat([roi_neg, roi_part, roi_pos], axis=0), indexes)        
+
+        return x_final, label_final, roi_final
+
 
 class Trainer(object):
     def __init__(self, net, train_dataset, val_dataset, optimizer):
@@ -88,7 +127,8 @@ class Trainer(object):
         print('val_cls_loss={:.3f} val_bbox_loss={:.3f} val_cls_acc={:.3f}'.format(val_mean_loss, val_mean_bbox_loss, val_mean_acc))
 
 
-    def train(self, n_epoch):
+    
+    def train(self, n_epoch, mini_batch=False):
         for epoch in range(n_epoch):
             self.loss_metric.reset_states()
             self.bbox_loss_metric.reset_states()
@@ -98,13 +138,18 @@ class Trainer(object):
             self.val_bbox_loss_metric.reset_states()
             self.val_cls_accuracy.reset_states()
             
-            for inputs, label, roi in tqdm.tqdm(self.dataset):
-                self.train_step(inputs, label, roi)
-            """
+            for x, label, roi in tqdm.tqdm(self.dataset):
+                if mini_batch:
+                    x, label, roi = rebalance_batch(x, label, roi)
+                    if x == None:
+                        continue
+                    
+                self.train_step(x, label, roi)
+            
             for inputs, label, roi in tqdm.tqdm(self.val_dataset):
                 self.val_step(inputs, label, roi)
                 break
-            """
+            
             self.save_model()
 
             self.log_metrics(epoch)

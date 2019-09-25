@@ -31,9 +31,12 @@ def parse_arguments(argv):
 def main(args):
     network_model = {'PNET': PNet, 'RNET': RNet}
 
-
+    
     net = network_model[args.net_model]()
     
+    if args.net_model == 'RNET' or args.net_model == 'ONET':
+        mini_batch = True 
+
     optimizer = tf.keras.optimizers.Adam(0.001)
 
     data_path = args.data_path
@@ -42,8 +45,8 @@ def main(args):
 
 
     trainer = Trainer(net=net, train_dataset=dataset.get_training_set(batch_size=args.batch_size), 
-        val_dataset=None, optimizer=optimizer)#dataset.get_validation_set(batch_size=args.batch_size), optimizer=optimizer)
-    trainer.train(n_epoch=args.n_epoch)
+        val_dataset=dataset.get_validation_set(batch_size=args.batch_size), optimizer=optimizer)#dataset.get_validation_set(batch_size=args.batch_size), optimizer=optimizer)
+    trainer.train(n_epoch=args.n_epoch, mini_batch=mini_batch)
 
 if __name__ == '__main__':
     main(parse_arguments(sys.argv[1:]))
